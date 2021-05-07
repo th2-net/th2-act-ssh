@@ -1,0 +1,7 @@
+variables:
+  APP_NAME: "th2-act-ssh"
+
+include:
+  - project: "vivarium/th2/pipelines"
+    ref: v2
+    file: "/.gitlab-ci-java.yml"
