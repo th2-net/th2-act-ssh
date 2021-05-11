@@ -49,7 +49,9 @@ class ActHandler(
         LOGGER.debug { "Start processing request ${request.toJson()}" }
         val timeOfStart = Instant.now()
         try {
-            val result = service.execute(request.executionAlias, request.parametersMap)
+            val endpointAlias: String? = request.endpointAlias.ifBlank { null }
+            val endpoint = service.findEndpoint(endpointAlias)
+            val result = service.execute(request.executionAlias, request.parametersMap, endpoint)
             val response: ExecutionResponse = result.commonResult.toExecutionResponse()
             responseObserver.onNext(response)
             reportExecution(request, result, timeOfStart)

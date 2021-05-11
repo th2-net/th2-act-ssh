@@ -22,11 +22,13 @@ import com.exactpro.th2.common.schema.factory.extensions.getCustomConfiguration
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import strikt.api.expectThat
+import strikt.assertions.first
 import strikt.assertions.get
 import strikt.assertions.hasSize
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNull
+import strikt.assertions.single
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -36,12 +38,17 @@ class TestSshServiceConfiguration {
         val data = """
         {
           "connection": {
-            "host": "host",
-            "username": "username",
-            "password": "pwd",
-            "port": 2222,
-            "connectionTimeout": 1000,
-            "authTimeout": 1000,
+            "endpoints": [
+                {
+                    "alias": "first",
+                    "host": "host",
+                    "username": "username",
+                    "password": "pwd",
+                    "port": 2222,
+                    "connectionTimeout": 1000,
+                    "authTimeout": 1000
+                }
+            ],
             "stopWaitTimeout": 10000
           },
           "reporting": {
@@ -80,12 +87,14 @@ class TestSshServiceConfiguration {
         val cfg: SshServiceConfiguration = loadConfiguration(customCfg)
 
         expectThat(cfg) {
-            get { connection }.apply {
-                get { host }.isEqualTo("host")
-                get { password }.isEqualTo("pwd")
-                get { privateKeyPath }.isNull()
-                get { port }.isEqualTo(2222)
-            }
+            get { connection }.get { endpoints }
+                .single().apply {
+                    get { alias }.isEqualTo("first")
+                    get { host }.isEqualTo("host")
+                    get { password }.isEqualTo("pwd")
+                    get { privateKeyPath }.isNull()
+                    get { port }.isEqualTo(2222)
+                }
             get { reporting }.apply {
                 get { rootName }.isEqualTo("YourActSsh")
             }
@@ -111,12 +120,17 @@ class TestSshServiceConfiguration {
         val data = """
         {
           "connection": {
-            "host": "host",
-            "username": "username",
-            "privateKeyPath": "path/to/private/key",
-            "port": 2222,
-            "connectionTimeout": 1000,
-            "authTimeout": 1000,
+            "endpoints": [
+                {
+                    "alias": "first",
+                    "host": "host",
+                    "username": "username",
+                    "privateKeyPath": "path/to/private/key",
+                    "port": 2222,
+                    "connectionTimeout": 1000,
+                    "authTimeout": 1000
+                }
+            ],
             "stopWaitTimeout": 10000
           },
           "reporting": {
@@ -155,12 +169,14 @@ class TestSshServiceConfiguration {
         val cfg: SshServiceConfiguration = loadConfiguration(customCfg)
 
         expectThat(cfg) {
-            get { connection }.apply {
-                get { host }.isEqualTo("host")
-                get { password }.isNull()
-                get { privateKeyPath }.isEqualTo(Path.of("path/to/private/key"))
-                get { port }.isEqualTo(2222)
-            }
+            get { connection }.get { endpoints }
+                .single().apply {
+                    get { alias }.isEqualTo("first")
+                    get { host }.isEqualTo("host")
+                    get { password }.isNull()
+                    get { privateKeyPath }.isEqualTo(Path.of("path/to/private/key"))
+                    get { port }.isEqualTo(2222)
+                }
             get { reporting }.apply {
                 get { rootName }.isEqualTo("YourActSsh")
             }

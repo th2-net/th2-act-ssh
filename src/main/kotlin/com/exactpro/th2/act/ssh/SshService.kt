@@ -18,6 +18,7 @@ package com.exactpro.th2.act.ssh
 
 import com.exactpro.th2.act.ssh.cfg.CommandExecution
 import com.exactpro.th2.act.ssh.cfg.ConnectionParameters
+import com.exactpro.th2.act.ssh.cfg.EndpointParameters
 import com.exactpro.th2.act.ssh.cfg.Execution
 import com.exactpro.th2.act.ssh.cfg.ScriptExecution
 import mu.KotlinLogging
@@ -36,6 +37,7 @@ import org.apache.sshd.scp.client.ScpClientCreator
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.SocketTimeoutException
+import java.nio.file.Path
 import java.rmi.RemoteException
 import java.time.Duration
 import java.util.EnumSet
@@ -51,28 +53,43 @@ class SshService(
 
     init {
         sshClient.ioServiceFactoryFactory = MinaServiceFactoryFactory()
-        configuration.privateKeyPath?.also {
-            sshClient.keyIdentityProvider = FileKeyPairProvider(it)
-        }
+        val keyPathByAlias: Map<String, Path> = configuration.endpoints.asSequence()
+            .filter { it.privateKeyPath != null }
+            .associateBy({ it.alias }) { it.privateKeyPath!! }
+
+        sshClient.keyIdentityProvider = AliasFileKeyPairProvider(keyPathByAlias)
         CoreModuleProperties.STOP_WAIT_TIME.set(sshClient, Duration.ofMillis(configuration.stopWaitTimeout))
         sshClient.start()
     }
 
+    fun findEndpoint(alias: String? = null): EndpointParameters {
+        if (alias == null) {
+            require(configuration.endpoints.size == 1) {
+                "Explicitly define the endpoint alias. More than one endpoint specified in act: ${configuration.endpoints.map { it.alias }}."
+            }
+            return configuration.endpoints.first()
+        }
+        return requireNotNull(configuration.endpoints.find { alias.equals(it.alias, ignoreCase = true) }) {
+            "Unknown endpoint alias: '$alias'"
+        }
+    }
+
     @Throws(SocketTimeoutException::class, RemoteException::class)
-    fun execute(alias: String, parameters: Map<String, String>): ExecutionResult {
+    fun execute(alias: String, parameters: Map<String, String>, endpoint: EndpointParameters): ExecutionResult {
         val execution: Execution = findExecutionByAlias(alias)
         return when (execution) {
-            is CommandExecution -> executeCommand(execution, parameters)
-            is ScriptExecution -> executeScript(execution, parameters)
+            is CommandExecution -> executeCommand(execution, parameters, endpoint)
+            is ScriptExecution -> executeScript(execution, parameters, endpoint)
         }
     }
 
     @Throws(SocketTimeoutException::class, RemoteException::class)
     private fun executeScript(
         execution: ScriptExecution,
-        parameters: Map<String, String>
+        parameters: Map<String, String>,
+        endpoint: EndpointParameters
     ): ScriptResult {
-        return startSession(configuration) {
+        return startSession(endpoint) {
             val script: String? = if (execution.addScriptToReport) {
                 downloadScript(execution.scriptPath)
             } else {
@@ -89,9 +106,10 @@ class SshService(
     @Throws(SocketTimeoutException::class, RemoteException::class)
     private fun executeCommand(
         execution: CommandExecution,
-        parameters: Map<String, String>
+        parameters: Map<String, String>,
+        endpoint: EndpointParameters
     ): CommandResult {
-        return startSession(configuration) {
+        return startSession(endpoint) {
             val result = executeCommandInternal(execution, parameters, execution.executionTimeout)
             CommandResult(result)
         }
@@ -165,13 +183,14 @@ class SshService(
         return substituter.replace(execution.execution)
     }
 
-    private inline fun <T : ExecutionResult> startSession(connectionParameters: ConnectionParameters, block: ClientSession.() -> T): T {
+    private inline fun <T : ExecutionResult> startSession(connectionParameters: EndpointParameters, block: ClientSession.() -> T): T {
         val session = sshClient.connect(connectionParameters.username, connectionParameters.host, connectionParameters.port)
             .verify(connectionParameters.connectionTimeout)
             .clientSession.apply {
                 connectionParameters.password?.also {
                     addPasswordIdentity(it)
                 }
+                setAttribute(AliasFileKeyPairProvider.ALIAS_ATTRIBUTE, connectionParameters.alias)
                 auth().verify(connectionParameters.authTimeout)
             }
         return session.use(block)

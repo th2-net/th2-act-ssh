@@ -27,15 +27,7 @@ class SshServiceConfiguration(
 ) {
     init {
         require(executions.isNotEmpty()) { "At least one alias must be set" }
-        checkCollisions(executions)
-    }
-
-    private fun checkCollisions(executions: List<Execution>) {
-        val aliases = executions.map { it.alias }
-        val collisions = aliases.filter { alias -> aliases.asSequence().filter { alias.equals(it, ignoreCase = true) }.take(2).toList().size > 1 }
-        require(collisions.isEmpty()) {
-            "Execution aliases are case insensitive. Collisions found: $collisions"
-        }
+        checkCollisions("Execution", executions, Execution::alias)
     }
 }
 
@@ -45,20 +37,30 @@ class ReportingConfiguration(
 )
 
 class ConnectionParameters(
+    val endpoints: List<EndpointParameters>,
+    val stopWaitTimeout: Long = 10_000L
+) {
+    init {
+        require(stopWaitTimeout > 0) { "Stop timeout must be greater that zero (0)" }
+        checkCollisions("Endpoints", endpoints, EndpointParameters::alias)
+    }
+}
+
+class EndpointParameters(
+    val alias: String,
     val host: String,
     val username: String,
     val password: String? = null,
     val privateKeyPath: Path? = null,
     val port: Int = 22,
     val connectionTimeout: Long = 1000L,
-    val authTimeout: Long = 1000L,
-    val stopWaitTimeout: Long = 10_000L
+    val authTimeout: Long = 1000L
 ) {
     init {
+        require(alias.isNotBlank()) { "alias must not be blank" }
         require(host.isNotBlank()) { "host must not be blank" }
         require(username.isNotBlank()) { "username must not be blank" }
         require(port > 0) { "port must be a positive integer but was $port" }
-        require(stopWaitTimeout > 0) { "Stop timeout must be greater that zero (0)" }
         require(privateKeyPath != null && password == null || password != null && privateKeyPath == null) {
             "Either privateKeyPath or password must be set"
         }
@@ -112,3 +114,11 @@ class ScriptExecution(
     addOutputToResponse,
     timeout
 )
+
+private fun <T> checkCollisions(name: String, executions: List<T>, aliasExtractor: T.() -> String) {
+    val aliases = executions.map { it.aliasExtractor() }
+    val collisions = aliases.filter { alias -> aliases.asSequence().filter { alias.equals(it, ignoreCase = true) }.take(2).toList().size > 1 }
+    require(collisions.isEmpty()) {
+        "$name aliases are case insensitive. Collisions found: $collisions"
+    }
+}

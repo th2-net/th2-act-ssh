@@ -15,14 +15,23 @@ spec:
   type: th2-act
   custom-config:
     connection:
-      host: host
-      username: username
-      password: pwd
-      # Or you can use path to the private key instead
-      # privateKeyPath: path/to/private/key
-      port: 22
-      connectionTimeout: 1000
-      authTimeout: 1000
+      endpoints:
+        - alias: "Conn1"
+          host: host1
+          username: username1
+          password: pwd
+          # Or you can use path to the private key instead
+          # privateKeyPath: path/to/private/key
+          port: 22
+          connectionTimeout: 1000
+          authTimeout: 1000
+        - alias: "Conn2"
+          host: host2
+          username: username2
+          privateKeyPath: path/to/private/key
+          port: 22
+          connectionTimeout: 1000
+          authTimeout: 1000
       stopWaitTimeout: 10000
     reporting:
       rootName: YourActSsh
@@ -49,33 +58,41 @@ spec:
 
 ### Connection
 
-#### host
+#### Endpoints
+The list of endpoints to connect. The endpoint will be chosen according to the endpoint alias specified in the request.
+If the act has only one endpoint you can omit the endpoint alias in the request. The endpoint will be chosen automatically.
+
+##### alias (required)
+
+The alias for to identify the endpoint
+
+##### host (required)
 
 The remote machine's address to connect.
 
-#### username
+##### username (required)
 
 The user's name that will be used to connect to the machine via SSH.
 
-#### password
+##### password
 
 The password that will be used for authentication (you can set it using environment variables `password: ${YOUR_ENV_VARIABLE}`).
 **NOTE:** if you use this parameter the **privateKeyPath** should not be set.
 
-#### privateKeyPath
+##### privateKeyPath
 
 The path to the private key that will be used for password-less authentication.
 **NOTE:** if you use this parameter the **password** should not be set.
 
-#### port
+##### port
 
 That port will be used to connect via SSH. The default value is 22.
 
-#### connectionTimeout
+##### connectionTimeout
 
 The timeout to wait until the connection is established.
 
-#### authTimeout
+##### authTimeout
 
 The timeout to wait until the authentication is finished.
 
@@ -137,6 +154,7 @@ The options that will be added to the script. As the result the following comman
 ### 0.0.2
 
 + The ability to connect using private key
++ Aliases for endpoints to connect
 
 ### 0.0.1
 
