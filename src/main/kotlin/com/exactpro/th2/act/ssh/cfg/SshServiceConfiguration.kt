@@ -18,6 +18,7 @@ package com.exactpro.th2.act.ssh.cfg
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import java.nio.file.Path
 
 class SshServiceConfiguration(
     val connection: ConnectionParameters,
@@ -46,17 +47,21 @@ class ReportingConfiguration(
 class ConnectionParameters(
     val host: String,
     val username: String,
-    val password: String,
+    val password: String? = null,
+    val privateKeyPath: Path? = null,
     val port: Int = 22,
     val connectionTimeout: Long = 1000L,
     val authTimeout: Long = 1000L,
     val stopWaitTimeout: Long = 10_000L
 ) {
     init {
-        check(host.isNotBlank()) { "host must not be blank" }
-        check(username.isNotBlank()) { "username must not be blank" }
-        check(port > 0) { "port must be a positive integer but was $port" }
+        require(host.isNotBlank()) { "host must not be blank" }
+        require(username.isNotBlank()) { "username must not be blank" }
+        require(port > 0) { "port must be a positive integer but was $port" }
         require(stopWaitTimeout > 0) { "Stop timeout must be greater that zero (0)" }
+        require(privateKeyPath != null && password == null || password != null && privateKeyPath == null) {
+            "Either privateKeyPath or password must be set"
+        }
     }
 }
 

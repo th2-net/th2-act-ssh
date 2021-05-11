@@ -28,6 +28,7 @@ import org.apache.sshd.client.SshClient
 import org.apache.sshd.client.channel.ClientChannelEvent
 import org.apache.sshd.client.keyverifier.AcceptAllServerKeyVerifier
 import org.apache.sshd.client.session.ClientSession
+import org.apache.sshd.common.keyprovider.FileKeyPairProvider
 import org.apache.sshd.common.util.io.NullOutputStream
 import org.apache.sshd.core.CoreModuleProperties
 import org.apache.sshd.mina.MinaServiceFactoryFactory
@@ -50,6 +51,9 @@ class SshService(
 
     init {
         sshClient.ioServiceFactoryFactory = MinaServiceFactoryFactory()
+        configuration.privateKeyPath?.also {
+            sshClient.keyIdentityProvider = FileKeyPairProvider(it)
+        }
         CoreModuleProperties.STOP_WAIT_TIME.set(sshClient, Duration.ofMillis(configuration.stopWaitTimeout))
         sshClient.start()
     }
@@ -165,7 +169,9 @@ class SshService(
         val session = sshClient.connect(connectionParameters.username, connectionParameters.host, connectionParameters.port)
             .verify(connectionParameters.connectionTimeout)
             .clientSession.apply {
-                addPasswordIdentity(connectionParameters.password)
+                connectionParameters.password?.also {
+                    addPasswordIdentity(it)
+                }
                 auth().verify(connectionParameters.authTimeout)
             }
         return session.use(block)

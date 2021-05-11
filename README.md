@@ -18,6 +18,8 @@ spec:
       host: host
       username: username
       password: pwd
+      # Or you can use path to the private key instead
+      # privateKeyPath: path/to/private/key
       port: 22
       connectionTimeout: 1000
       authTimeout: 1000
@@ -58,6 +60,12 @@ The user's name that will be used to connect to the machine via SSH.
 #### password
 
 The password that will be used for authentication (you can set it using environment variables `password: ${YOUR_ENV_VARIABLE}`).
+**NOTE:** if you use this parameter the **privateKeyPath** should not be set.
+
+#### privateKeyPath
+
+The path to the private key that will be used for password-less authentication.
+**NOTE:** if you use this parameter the **password** should not be set.
 
 #### port
 
@@ -125,6 +133,10 @@ The path to the script that should be executed. NOTE: it is always better to spe
 The options that will be added to the script. As the result the following command will be executed `${scriptPath} ${options}`
 
 ## Release Notes
+
+### 0.0.2
+
++ The ability to connect using private key
 
 ### 0.0.1
 
