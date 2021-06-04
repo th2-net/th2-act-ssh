@@ -24,11 +24,11 @@ class CommonExecutionResult(
     val executedCommand: String,
     val output: String?,
     val errOut: String,
-    val exitCode: Int
+    val exitCode: Int?
 ) {
-    fun isSuccess(): Boolean {
-        return exitCode == 0 && errOut.isEmpty()
-    }
+    fun isSuccess(): Boolean = (exitCode == 0 || isInterrupted()) && errOut.isEmpty()
+
+    fun isInterrupted(): Boolean = exitCode == null
 }
 
 class CommandResult(

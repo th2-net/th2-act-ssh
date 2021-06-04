@@ -26,10 +26,10 @@ import org.apache.commons.text.StringSubstitutor
 import org.apache.commons.text.lookup.StringLookupFactory
 import org.apache.sshd.client.ClientBuilder
 import org.apache.sshd.client.SshClient
+import org.apache.sshd.client.channel.ChannelShell
 import org.apache.sshd.client.channel.ClientChannelEvent
 import org.apache.sshd.client.keyverifier.AcceptAllServerKeyVerifier
 import org.apache.sshd.client.session.ClientSession
-import org.apache.sshd.common.keyprovider.FileKeyPairProvider
 import org.apache.sshd.common.util.io.NullOutputStream
 import org.apache.sshd.core.CoreModuleProperties
 import org.apache.sshd.mina.MinaServiceFactoryFactory
@@ -76,8 +76,7 @@ class SshService(
 
     @Throws(SocketTimeoutException::class, RemoteException::class)
     fun execute(alias: String, parameters: Map<String, String>, endpoint: EndpointParameters): ExecutionResult {
-        val execution: Execution = findExecutionByAlias(alias)
-        return when (execution) {
+        return when (val execution: Execution = findExecutionByAlias(alias)) {
             is CommandExecution -> executeCommand(execution, parameters, endpoint)
             is ScriptExecution -> executeScript(execution, parameters, endpoint)
         }
@@ -95,7 +94,7 @@ class SshService(
             } else {
                 null
             }
-            val result = executeCommandInternal(execution, parameters, execution.executionTimeout)
+            val result = executeCommandInternal(execution, parameters)
             ScriptResult(
                 scriptContent = script,
                 commonResult = result
@@ -110,19 +109,18 @@ class SshService(
         endpoint: EndpointParameters
     ): CommandResult {
         return startSession(endpoint) {
-            val result = executeCommandInternal(execution, parameters, execution.executionTimeout)
+            val result = executeCommandInternal(execution, parameters)
             CommandResult(result)
         }
     }
 
     private fun ClientSession.executeCommandInternal(
         execution: Execution,
-        parameters: Map<String, String>,
-        executionTimeout: Duration
+        parameters: Map<String, String>
     ): CommonExecutionResult {
         val command = getCommand(execution, parameters)
         LOGGER.debug { "Executing command $command" }
-        val result = executeCommand(command, execution.addOutputToResponse, executionTimeout)
+        val result = executeCommand(command, execution.addOutputToResponse, execution.executionTimeout, execution.interruptOnTimeout)
         LOGGER.debug { "Command executed with exit code: ${result.exitCode}" }
         return result
     }
@@ -151,18 +149,25 @@ class SshService(
     }
 
     @Throws(SocketTimeoutException::class, RemoteException::class)
-    private fun ClientSession.executeCommand(command: String, addOutput: Boolean, timeout: Duration): CommonExecutionResult {
+    private fun ClientSession.executeCommand(command: String, addOutput: Boolean, timeout: Duration, interruptOnTimeout: Boolean): CommonExecutionResult {
         return ByteArrayOutputStream().use { err ->
             (if (addOutput) ByteArrayOutputStream() else NullOutputStream()).use { out ->
-                val channel = createExecChannel(command)
-                channel.err = err
-                channel.out = out
-                channel.open().verify(timeout)
-                val results: Set<ClientChannelEvent> = channel.waitFor(EnumSet.of(ClientChannelEvent.EXIT_STATUS, ClientChannelEvent.CLOSED), timeout)
-                if (results.contains(ClientChannelEvent.TIMEOUT)) {
-                    throw SocketTimeoutException("Cannot execute command $command for specified timeout: $timeout")
+                val execChannel = createExecChannel(command)
+                execChannel.use { channel ->
+                    channel.err = err
+                    channel.out = out
+                    channel.isUsePty = true // This option is required to send SIGHUP signal to the attached process when the channel is closed
+                    channel.open().verify(timeout)
+                    val results: Set<ClientChannelEvent> = channel.waitFor(EnumSet.of(ClientChannelEvent.EXIT_STATUS, ClientChannelEvent.CLOSED), timeout)
+                    if (!interruptOnTimeout && results.contains(ClientChannelEvent.TIMEOUT)) {
+                        throw SocketTimeoutException("Cannot execute command $command for specified timeout: $timeout")
+                    }
                 }
-                val exitStatus: Int = channel.exitStatus ?: throw RemoteException("No exit status returned for command: $command")
+                val exitStatus: Int? = if (interruptOnTimeout) {
+                    null
+                } else {
+                    execChannel.exitStatus ?: throw RemoteException("No exit status returned for command: $command")
+                }
                 val charset = DEFAULT_CHARSET
                 CommonExecutionResult(
                     executedCommand = command,
