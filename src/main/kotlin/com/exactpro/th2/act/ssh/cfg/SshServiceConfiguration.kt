@@ -82,7 +82,8 @@ sealed class Execution(
     val execution: String,
     val defaultParameters: Map<String, String>,
     val addOutputToResponse: Boolean,
-    val timeout: Long
+    val timeout: Long,
+    val interruptOnTimeout: Boolean
 )
 
 class CommandExecution(
@@ -90,13 +91,15 @@ class CommandExecution(
     execution: String,
     defaultParameters: Map<String, String> = emptyMap(),
     addOutputToResponse: Boolean = true,
-    timeout: Long
+    timeout: Long,
+    interruptOnTimeout: Boolean = false
 ) : Execution(
     alias,
     execution,
     defaultParameters,
     addOutputToResponse,
-    timeout
+    timeout,
+    interruptOnTimeout
 )
 
 class ScriptExecution(
@@ -106,13 +109,15 @@ class ScriptExecution(
     val addScriptToReport: Boolean = true,
     defaultParameters: Map<String, String> = emptyMap(),
     addOutputToResponse: Boolean = true,
-    timeout: Long
+    timeout: Long,
+    interruptOnTimeout: Boolean = false
 ) : Execution(
     alias,
     if (options.isBlank()) scriptPath else "$scriptPath $options",
     defaultParameters,
     addOutputToResponse,
-    timeout
+    timeout,
+    interruptOnTimeout
 )
 
 private fun <T> checkCollisions(name: String, executions: List<T>, aliasExtractor: T.() -> String) {

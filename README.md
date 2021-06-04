@@ -1,4 +1,4 @@
-# th2 act ssh (0.0.1)
+# th2 act ssh (0.1.0)
 
 ## Overview
 
@@ -129,6 +129,10 @@ If it is `true` the action output will be added to the response and to the repor
 
 The timeout to wait until the action is finished.
 
+##### interruptOnTimeout
+
+If it is `true` the action will interrupt command on timeout using the SIGHUP signal otherwise action will be failed when command has not completed on timeout.
+
 ##### defaultParameters
 
 The list default values of the parameters that should be used if the parameter was not specified in the execution request;
@@ -150,6 +154,14 @@ The path to the script that should be executed. NOTE: it is always better to spe
 The options that will be added to the script. As the result the following command will be executed `${scriptPath} ${options}`
 
 ## Release Notes
+
+### 0.1.0
+
++ Added the interruptOnTimeout option for execution block
+
+### 0.0.3
+
++ Use pty option to send SIGHUP signal to the attached process when the channel is closed
 
 ### 0.0.2
 

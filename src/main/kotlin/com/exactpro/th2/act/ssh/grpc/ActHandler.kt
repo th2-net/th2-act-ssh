@@ -155,7 +155,7 @@ class ActHandler(
         @JvmStatic
         private fun CommonExecutionResult.toExecutionResponse(): ExecutionResponse {
             return ExecutionResponse.newBuilder()
-                .setExitCode(exitCode)
+                .setInterupted(isInterrupted())
                 .setStatus(
                     RequestStatus.newBuilder()
                         .apply {
@@ -172,6 +172,11 @@ class ActHandler(
                         it.empty = Empty.getDefaultInstance()
                     } else {
                         it.output = output
+                    }
+                    if (exitCode == null) {
+                        it.unknownExitCode = Empty.getDefaultInstance()
+                    } else {
+                        it.exitCode = exitCode
                     }
                 }.build()
         }
