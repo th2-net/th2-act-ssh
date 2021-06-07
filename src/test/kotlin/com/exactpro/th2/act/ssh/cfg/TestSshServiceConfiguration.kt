@@ -16,13 +16,13 @@
 
 package com.exactpro.th2.act.ssh.cfg
 
-import com.exactpro.th2.common.schema.configuration.ConfigurationManager
 import com.exactpro.th2.common.schema.factory.AbstractCommonFactory
 import com.exactpro.th2.common.schema.factory.extensions.getCustomConfiguration
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import strikt.api.expectThat
-import strikt.assertions.first
 import strikt.assertions.get
 import strikt.assertions.hasSize
 import strikt.assertions.isA
@@ -199,8 +199,20 @@ class TestSshServiceConfiguration {
 
     private inline fun <reified T> loadConfiguration(customCfg: Path): T {
         val factory = object : AbstractCommonFactory() {
-            override fun getConfigurationManager(): ConfigurationManager {
-                return ConfigurationManager(emptyMap())
+            override fun getPathToRabbitMQConfiguration(): Path {
+                TODO("Not yet implemented")
+            }
+
+            override fun getPathToMessageRouterConfiguration(): Path {
+                TODO("Not yet implemented")
+            }
+
+            override fun getPathToGrpcRouterConfiguration(): Path {
+                TODO("Not yet implemented")
+            }
+
+            override fun getPathToCradleConfiguration(): Path {
+                TODO("Not yet implemented")
             }
 
             override fun getPathToCustomConfiguration(): Path {
@@ -214,8 +226,16 @@ class TestSshServiceConfiguration {
             override fun getOldPathToDictionariesDir(): Path {
                 TODO("Not yet implemented")
             }
+
+            override fun getPathToPrometheusConfiguration(): Path {
+                TODO("Not yet implemented")
+            }
         }
 
-        return factory.getCustomConfiguration()
+        return factory.getCustomConfiguration(MAPPER)
+    }
+
+    companion object {
+        private val MAPPER = ObjectMapper().registerKotlinModule()
     }
 }

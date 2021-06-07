@@ -29,9 +29,9 @@ import com.exactpro.th2.common.event.IBodyData
 import com.exactpro.th2.common.grpc.EventBatch
 import com.exactpro.th2.common.grpc.EventID
 import com.exactpro.th2.common.grpc.RequestStatus
-import com.exactpro.th2.common.message.toJson
 import com.exactpro.th2.common.schema.message.MessageRouter
 import com.google.protobuf.Empty
+import com.google.protobuf.TextFormat.shortDebugString
 import io.grpc.stub.StreamObserver
 import mu.KotlinLogging
 import org.apache.commons.lang3.exception.ExceptionUtils
@@ -46,7 +46,7 @@ class ActHandler(
 ) : ActSshGrpc.ActSshImplBase() {
 
     override fun execute(request: ExecutionRequest, responseObserver: StreamObserver<ExecutionResponse>) {
-        LOGGER.debug { "Start processing request ${request.toJson()}" }
+        LOGGER.debug { "Start processing request ${shortDebugString(request)}" }
         val timeOfStart = Instant.now()
         try {
             val endpointAlias: String? = request.endpointAlias.ifBlank { null }
@@ -56,12 +56,12 @@ class ActHandler(
             responseObserver.onNext(response)
             reportExecution(request, result, timeOfStart)
         } catch (ex: Exception) {
-            LOGGER.error(ex) { "Cannot process request ${request.toJson()}" }
+            LOGGER.error(ex) { "Cannot process request ${shortDebugString(request)}" }
             reportError(request, ex)
             responseObserver.onError(ex)
         } finally {
             responseObserver.onCompleted()
-            LOGGER.debug { "Processing finished in ${Duration.between(timeOfStart, Instant.now())} for request ${request.toJson()}" }
+            LOGGER.debug { "Processing finished in ${Duration.between(timeOfStart, Instant.now())} for request ${shortDebugString(request)}" }
         }
     }
 
@@ -137,7 +137,7 @@ class ActHandler(
         @JvmStatic
         private fun MessageRouter<EventBatch>.storeSingle(event: Event, parent: EventID) {
             send(EventBatch.newBuilder()
-                .addEvents(event.toProtoEvent(parent.id))
+                .addEvents(event.toProto(parent))
                 .build())
         }
 
