@@ -31,7 +31,6 @@ repositories {
     }
     mavenLocal()
     mavenCentral()
-    jcenter()
     maven {
         name 'Sonatype_snapshots'
         url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
@@ -69,7 +68,7 @@ dependencies {
     api platform('com.exactpro.th2:bom:3.0.0')
 
     api "com.exactpro.th2:common:3.13.4"
-    api "com.exactpro.th2:grpc-act-ssh:0.0.5"
+    api "com.exactpro.th2:grpc-act-ssh:1.0.0"
 
     implementation "com.fasterxml.jackson.core:jackson-core"
     implementation "com.fasterxml.jackson.core:jackson-databind"
@@ -83,7 +82,7 @@ dependencies {
     implementation 'io.github.microutils:kotlin-logging:1.7.9'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
-    testImplementation "io.strikt:strikt-core:0.28.1"
+    testImplementation "io.strikt:strikt-core:0.30.0"
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
 }
 
