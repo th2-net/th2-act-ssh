@@ -37,10 +37,16 @@ import com.exactpro.th2.common.grpc.EventID;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.common.schema.grpc.router.GrpcRouter;
 import com.exactpro.th2.common.schema.message.MessageRouter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.kotlin.KotlinModule;
 
 public class ActMain {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ActMain.class);
+    public static final ObjectMapper MAPPER = new ObjectMapper();
+    static {
+        MAPPER.registerModule(new KotlinModule());
+    }
 
     public static void main(String[] args) {
         Deque<AutoCloseable> resources = new ConcurrentLinkedDeque<>();
@@ -57,7 +63,7 @@ public class ActMain {
             resources.add(grpcRouter);
             MessageRouter<EventBatch> eventBatchRouter = factory.getEventBatchRouter();
 
-            SshServiceConfiguration configuration = factory.getCustomConfiguration(SshServiceConfiguration.class);
+            SshServiceConfiguration configuration = factory.getCustomConfiguration(SshServiceConfiguration.class, MAPPER);
 
             SshService sshService = new SshService(configuration.getConnection(), configuration.getExecutions());
             resources.add(sshService);

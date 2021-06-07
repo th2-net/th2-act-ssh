@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.act.ssh.cfg
 
+import com.exactpro.th2.act.bootstrap.ActMain
 import com.exactpro.th2.common.schema.factory.AbstractCommonFactory
 import com.exactpro.th2.common.schema.factory.extensions.getCustomConfiguration
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -232,10 +233,6 @@ class TestSshServiceConfiguration {
             }
         }
 
-        return factory.getCustomConfiguration(MAPPER)
-    }
-
-    companion object {
-        private val MAPPER = ObjectMapper().registerKotlinModule()
+        return factory.getCustomConfiguration(ActMain.MAPPER)
     }
 }
