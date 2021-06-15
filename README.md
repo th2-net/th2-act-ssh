@@ -155,6 +155,10 @@ The options that will be added to the script. As the result the following comman
 
 ## Release Notes
 
+### 0.1.3
+
++ Add description from the request to the event with the result
+
 ### 0.1.2
 
 + Fix problem with missing Kotlin module for deserialization
