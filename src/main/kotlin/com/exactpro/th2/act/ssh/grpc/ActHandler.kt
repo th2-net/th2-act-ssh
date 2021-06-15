@@ -22,6 +22,7 @@ import com.exactpro.th2.act.ssh.ScriptResult
 import com.exactpro.th2.act.ssh.SshService
 import com.exactpro.th2.act.ssh.cfg.ReportingConfiguration
 import com.exactpro.th2.act.ssh.events.createParametersTable
+import com.exactpro.th2.act.ssh.events.getDescriptionOrDefault
 import com.exactpro.th2.act.ssh.events.getParentIdOrDefault
 import com.exactpro.th2.common.event.Event
 import com.exactpro.th2.common.event.EventUtils.createMessageBean
@@ -74,7 +75,7 @@ class ActHandler(
             val commonResult = result.commonResult
             val executionEvent = Event.from(timeOfStart)
                 .endTimestamp()
-                .name("Execution result for ${commonResult.executedCommand}")
+                .name(request.getDescriptionOrDefault("Execution result for ${commonResult.executedCommand}"))
                 .type(typeFor(result))
                 .status(if (commonResult.isSuccess()) Event.Status.PASSED else Event.Status.FAILED)
                 .bodyData(createMessageBean("Command: ${commonResult.executedCommand}"))

@@ -33,6 +33,13 @@ fun ExecutionRequest.getParentIdOrDefault(default: EventID): EventID {
     return eventInfo.parentEventId
 }
 
+fun ExecutionRequest.getDescriptionOrDefault(default: String): String {
+    if (!hasEventInfo()) {
+        return default
+    }
+    return eventInfo.description.ifBlank { default }
+}
+
 class ParametersRow(
     @get:JsonProperty("Name") val name: String,
     @get:JsonProperty("Value") val value: String
