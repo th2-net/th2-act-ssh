@@ -33,6 +33,7 @@ import com.exactpro.th2.common.grpc.RequestStatus
 import com.exactpro.th2.common.message.toJson
 import com.exactpro.th2.common.schema.message.MessageRouter
 import com.google.protobuf.Empty
+import io.grpc.Status
 import io.grpc.stub.StreamObserver
 import mu.KotlinLogging
 import org.apache.commons.lang3.exception.ExceptionUtils
@@ -56,14 +57,18 @@ class ActHandler(
             val response: ExecutionResponse = result.commonResult.toExecutionResponse()
             responseObserver.onNext(response)
             reportExecution(request, result, timeOfStart)
+            responseObserver.onCompleted()
         } catch (ex: Exception) {
             LOGGER.error(ex) { "Cannot process request ${request.toJson()}" }
             reportError(request, ex)
-            responseObserver.onError(ex)
+            responseObserver.onErrorWithStatus(ex, Status.INTERNAL)
         } finally {
-            responseObserver.onCompleted()
             LOGGER.debug { "Processing finished in ${Duration.between(timeOfStart, Instant.now())} for request ${request.toJson()}" }
         }
+    }
+
+    private fun StreamObserver<ExecutionResponse>.onErrorWithStatus(ex: Exception, status: Status) {
+        onError(status.withDescription(ExceptionUtils.getRootCauseMessage(ex) ?: ex.toString()).asRuntimeException())
     }
 
     private fun reportExecution(
@@ -138,7 +143,7 @@ class ActHandler(
         @JvmStatic
         private fun MessageRouter<EventBatch>.storeSingle(event: Event, parent: EventID) {
             send(EventBatch.newBuilder()
-                .addEvents(event.toProtoEvent(parent.id))
+                .addEvents(event.toProto(parent))
                 .build())
         }
 

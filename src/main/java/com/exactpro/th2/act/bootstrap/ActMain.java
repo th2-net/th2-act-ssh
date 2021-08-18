@@ -15,8 +15,8 @@
  */
 package com.exactpro.th2.act.bootstrap;
 
-import static com.exactpro.th2.common.metrics.CommonMetrics.setLiveness;
-import static com.exactpro.th2.common.metrics.CommonMetrics.setReadiness;
+import static com.exactpro.th2.common.metrics.CommonMetrics.LIVENESS_MONITOR;
+import static com.exactpro.th2.common.metrics.CommonMetrics.READINESS_MONITOR;
 
 import java.time.Instant;
 import java.util.Deque;
@@ -49,7 +49,7 @@ public class ActMain {
 
         configureShutdownHook(resources, lock, condition);
         try {
-            setLiveness(true);
+            LIVENESS_MONITOR.enable();
             CommonFactory factory = CommonFactory.createFromArguments(args);
             resources.add(factory);
 
@@ -70,7 +70,7 @@ public class ActMain {
                     .type("Microservice")
                     .status(Status.PASSED);
 
-            eventBatchRouter.send(EventBatch.newBuilder().addEvents(rootEvent.toProtoEvent(null)).build());
+            eventBatchRouter.send(EventBatch.newBuilder().addEvents(rootEvent.toProto(null)).build());
 
             EventID rootEventId = EventID.newBuilder().setId(rootEvent.getId()).build();
             ActHandler actHandler = new ActHandler(
@@ -81,7 +81,7 @@ public class ActMain {
             );
             ActServer actServer = new ActServer(grpcRouter.startServer(actHandler));
             resources.add(actServer::stop);
-            setReadiness(true);
+            READINESS_MONITOR.enable();
             LOGGER.info("Act started");
             awaitShutdown(lock, condition);
         } catch (InterruptedException e) {
@@ -109,7 +109,7 @@ public class ActMain {
             @Override
             public void run() {
                 LOGGER.info("Shutdown start");
-                setReadiness(false);
+                READINESS_MONITOR.disable();
                 try {
                     lock.lock();
                     condition.signalAll();
@@ -124,7 +124,7 @@ public class ActMain {
                         LOGGER.error(e.getMessage(), e);
                     }
                 });
-                setLiveness(false);
+                LIVENESS_MONITOR.disable();
                 LOGGER.info("Shutdown end");
             }
         });

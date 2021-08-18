@@ -1,4 +1,4 @@
-# th2 act ssh (1.0.1)
+# th2 act ssh (1.1.0)
 
 ## Overview
 
@@ -154,6 +154,14 @@ The path to the script that should be executed. NOTE: it is always better to spe
 The options that will be added to the script. As the result the following command will be executed `${scriptPath} ${options}`
 
 ## Release Notes
+
+### 1.1.0
+
+#### Changed:
+
++ Update common version from 3.13.4 to 3.29.1
++ Correct responses on gRPC request when an error is occurred during execution
++ Add ability to send command output as a raw message
 
 ### 1.0.1
 
