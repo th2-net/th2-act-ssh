@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import com.exactpro.th2.act.ssh.SshService;
 import com.exactpro.th2.act.ssh.cfg.SshServiceConfiguration;
 import com.exactpro.th2.act.ssh.grpc.ActHandler;
+import com.exactpro.th2.act.ssh.messages.MessagePublisher;
 import com.exactpro.th2.common.event.Event;
 import com.exactpro.th2.common.event.Event.Status;
 import com.exactpro.th2.common.grpc.EventBatch;
@@ -57,9 +58,11 @@ public class ActMain {
             resources.add(grpcRouter);
             MessageRouter<EventBatch> eventBatchRouter = factory.getEventBatchRouter();
 
-            SshServiceConfiguration configuration = factory.getCustomConfiguration(SshServiceConfiguration.class);
+            var configuration = factory.getCustomConfiguration(SshServiceConfiguration.class);
 
-            SshService sshService = new SshService(configuration.getConnection(), configuration.getExecutions());
+            var publisher = new MessagePublisher(factory.getMessageRouterRawBatch(), configuration.getMessagePublication());
+
+            var sshService = new SshService(configuration.getConnection(), configuration.getExecutions(), publisher);
             resources.add(sshService);
 
             String rootName = configuration.getReporting().getRootName();
@@ -73,13 +76,13 @@ public class ActMain {
             eventBatchRouter.send(EventBatch.newBuilder().addEvents(rootEvent.toProto(null)).build());
 
             EventID rootEventId = EventID.newBuilder().setId(rootEvent.getId()).build();
-            ActHandler actHandler = new ActHandler(
+            var actHandler = new ActHandler(
                     sshService,
                     eventBatchRouter,
                     rootEventId,
                     configuration.getReporting()
             );
-            ActServer actServer = new ActServer(grpcRouter.startServer(actHandler));
+            var actServer = new ActServer(grpcRouter.startServer(actHandler));
             resources.add(actServer::stop);
             READINESS_MONITOR.enable();
             LOGGER.info("Act started");

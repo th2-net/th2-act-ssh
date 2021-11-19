@@ -16,6 +16,8 @@
 package com.exactpro.th2.act.ssh.cfg
 
 import com.exactpro.th2.act.ssh.SshService
+import com.exactpro.th2.act.ssh.messages.MessagePublisher
+import com.nhaarman.mockitokotlin2.mock
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -35,7 +37,8 @@ class TestSshServiceManual {
     private val sshService = SshService(ConnectionParameters(
         listOf(endpoint)),
         listOf(CommandExecution("false", "echo \${$parameterName} && sleep \${$parameterName}", emptyMap(), true, 2_000, false),
-            CommandExecution("true", "echo \${$parameterName} && sleep \${$parameterName}", emptyMap(), true, 2_000, true))
+            CommandExecution("true", "echo \${$parameterName} && sleep \${$parameterName}", emptyMap(), true, 2_000, true)),
+        MessagePublisher(mock { }, PublicationConfiguration(enabled = false))
     )
 
     @Test
