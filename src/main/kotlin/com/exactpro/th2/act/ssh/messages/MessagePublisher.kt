@@ -24,6 +24,7 @@ import com.exactpro.th2.common.grpc.RawMessageBatch
 import com.exactpro.th2.common.schema.message.MessageRouter
 import com.exactpro.th2.common.schema.message.QueueAttribute
 import com.google.protobuf.ByteString
+import mu.KotlinLogging
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -47,18 +48,27 @@ class MessagePublisher(
         parameters: Map<String, String>
     ) {
         val cfg = execution.messagePublication ?: defaultConfiguration
-        if (!cfg.enabled) return
+        if (!cfg.enabled) {
+            LOGGER.info { "Skip output publication for command ${execution.alias}" }
+            return
+        }
         val info = getInfoForAlias(cfg.sessionAlias)
-        synchronized(info) {
-            router.send(RawMessageBatch.newBuilder()
-                .addMessages(
-                    RawMessage.newBuilder()
-                        .setBody(ByteString.copyFrom(output, Charsets.UTF_8))
-                        .fillMetadata(info, cfg, execution, parameters)
+        runCatching {
+            synchronized(info) {
+                router.sendAll(RawMessageBatch.newBuilder()
+                    .addMessages(
+                        RawMessage.newBuilder()
+                            .setBody(ByteString.copyFrom(output, Charsets.UTF_8))
+                            .fillMetadata(info, cfg, execution, parameters)
+                    )
+                    .build(),
+                    QueueAttribute.FIRST.value
                 )
-                .build(),
-                QueueAttribute.FIRST.value
-            )
+            }
+        }.onSuccess {
+            LOGGER.info { "Output for command ${execution.alias} with parameters $parameters was published under session alias ${cfg.sessionAlias}" }
+        }.onFailure {
+            LOGGER.error(it) { "Cannot publish output for command ${execution.alias} with parameters $parameters" }
         }
     }
 
@@ -84,5 +94,6 @@ class MessagePublisher(
     companion object {
         private const val EXECUTION_ALIAS_PARAMETER = "act.ssh.execution-alias"
         private val NANOS_IN_SECONDS: Long = TimeUnit.SECONDS.toNanos(1)
+        private val LOGGER = KotlinLogging.logger { }
     }
 }
