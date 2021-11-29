@@ -46,7 +46,7 @@ class TestMessagePublisher {
             publisher.publish("test", createExecution("test-alias", "test-msg-alias"), mapOf("test-param" to "value"))
 
             val captor = argumentCaptor<RawMessageBatch>()
-            verify(router).send(captor.capture(), anyVararg())
+            verify(router).sendAll(captor.capture(), anyVararg())
             expectThat(captor.firstValue)
                 .get { messagesList }
                 .single()
@@ -70,14 +70,14 @@ class TestMessagePublisher {
         fun `does not publish if no publication parameters set`() {
             publisher.publish("test", createExecution("test-alias", "test-msg-alias", enabled = null), mapOf("test-param" to "value"))
 
-            verify(router, never()).send(any(), anyVararg())
+            verify(router, never()).sendAll(any(), anyVararg())
         }
 
         @Test
         fun `does not publish if no publication is disabled`() {
             publisher.publish("test", createExecution("test-alias", "test-msg-alias", enabled = false), mapOf("test-param" to "value"))
 
-            verify(router, never()).send(any(), anyVararg())
+            verify(router, never()).sendAll(any(), anyVararg())
         }
     }
 
@@ -93,7 +93,7 @@ class TestMessagePublisher {
             publisher.publish("test", createExecution("test-alias", "test-msg-alias"), mapOf("test-param" to "value"))
 
             val captor = argumentCaptor<RawMessageBatch>()
-            verify(router).send(captor.capture(), anyVararg())
+            verify(router).sendAll(captor.capture(), anyVararg())
             expectThat(captor.firstValue)
                 .get { messagesList }
                 .single()
@@ -118,7 +118,7 @@ class TestMessagePublisher {
             publisher.publish("test", createExecution("test-alias", "test-msg-alias", enabled = null), mapOf("test-param" to "value"))
 
             val captor = argumentCaptor<RawMessageBatch>()
-            verify(router).send(captor.capture(), anyVararg())
+            verify(router).sendAll(captor.capture(), anyVararg())
             expectThat(captor.firstValue)
                 .get { messagesList }
                 .single()
@@ -142,7 +142,7 @@ class TestMessagePublisher {
         fun `does not publish if no publication is disabled`() {
             publisher.publish("test", createExecution("test-alias", "test-msg-alias", enabled = false), mapOf("test-param" to "value"))
 
-            verify(router, never()).send(any(), anyVararg())
+            verify(router, never()).sendAll(any(), anyVararg())
         }
     }
 
