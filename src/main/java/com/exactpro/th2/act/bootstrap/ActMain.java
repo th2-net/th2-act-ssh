@@ -15,8 +15,8 @@
  */
 package com.exactpro.th2.act.bootstrap;
 
-import static com.exactpro.th2.common.metrics.CommonMetrics.setLiveness;
-import static com.exactpro.th2.common.metrics.CommonMetrics.setReadiness;
+import static com.exactpro.th2.common.metrics.CommonMetrics.LIVENESS_MONITOR;
+import static com.exactpro.th2.common.metrics.CommonMetrics.READINESS_MONITOR;
 
 import java.time.Instant;
 import java.util.Deque;
@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import com.exactpro.th2.act.ssh.SshService;
 import com.exactpro.th2.act.ssh.cfg.SshServiceConfiguration;
 import com.exactpro.th2.act.ssh.grpc.ActHandler;
+import com.exactpro.th2.act.ssh.messages.MessagePublisher;
 import com.exactpro.th2.common.event.Event;
 import com.exactpro.th2.common.event.Event.Status;
 import com.exactpro.th2.common.grpc.EventBatch;
@@ -49,7 +50,7 @@ public class ActMain {
 
         configureShutdownHook(resources, lock, condition);
         try {
-            setLiveness(true);
+            LIVENESS_MONITOR.enable();
             CommonFactory factory = CommonFactory.createFromArguments(args);
             resources.add(factory);
 
@@ -57,9 +58,11 @@ public class ActMain {
             resources.add(grpcRouter);
             MessageRouter<EventBatch> eventBatchRouter = factory.getEventBatchRouter();
 
-            SshServiceConfiguration configuration = factory.getCustomConfiguration(SshServiceConfiguration.class);
+            var configuration = factory.getCustomConfiguration(SshServiceConfiguration.class);
 
-            SshService sshService = new SshService(configuration.getConnection(), configuration.getExecutions());
+            var publisher = new MessagePublisher(factory.getMessageRouterRawBatch(), configuration.getMessagePublication());
+
+            var sshService = new SshService(configuration.getConnection(), configuration.getExecutions(), publisher);
             resources.add(sshService);
 
             String rootName = configuration.getReporting().getRootName();
@@ -70,18 +73,18 @@ public class ActMain {
                     .type("Microservice")
                     .status(Status.PASSED);
 
-            eventBatchRouter.send(EventBatch.newBuilder().addEvents(rootEvent.toProtoEvent(null)).build());
+            eventBatchRouter.send(EventBatch.newBuilder().addEvents(rootEvent.toProto(null)).build());
 
             EventID rootEventId = EventID.newBuilder().setId(rootEvent.getId()).build();
-            ActHandler actHandler = new ActHandler(
+            var actHandler = new ActHandler(
                     sshService,
                     eventBatchRouter,
                     rootEventId,
                     configuration.getReporting()
             );
-            ActServer actServer = new ActServer(grpcRouter.startServer(actHandler));
+            var actServer = new ActServer(grpcRouter.startServer(actHandler));
             resources.add(actServer::stop);
-            setReadiness(true);
+            READINESS_MONITOR.enable();
             LOGGER.info("Act started");
             awaitShutdown(lock, condition);
         } catch (InterruptedException e) {
@@ -109,7 +112,7 @@ public class ActMain {
             @Override
             public void run() {
                 LOGGER.info("Shutdown start");
-                setReadiness(false);
+                READINESS_MONITOR.disable();
                 try {
                     lock.lock();
                     condition.signalAll();
@@ -124,7 +127,7 @@ public class ActMain {
                         LOGGER.error(e.getMessage(), e);
                     }
                 });
-                setLiveness(false);
+                LIVENESS_MONITOR.disable();
                 LOGGER.info("Shutdown end");
             }
         });

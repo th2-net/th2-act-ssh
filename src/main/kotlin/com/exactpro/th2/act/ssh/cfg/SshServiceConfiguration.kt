@@ -23,7 +23,8 @@ import java.nio.file.Path
 class SshServiceConfiguration(
     val connection: ConnectionParameters,
     val executions: List<Execution>,
-    val reporting: ReportingConfiguration = ReportingConfiguration()
+    val reporting: ReportingConfiguration = ReportingConfiguration(),
+    val messagePublication: PublicationConfiguration = PublicationConfiguration(),
 ) {
     init {
         require(executions.isNotEmpty()) { "At least one alias must be set" }
@@ -67,6 +68,10 @@ class EndpointParameters(
     }
 }
 
+class PublicationConfiguration(
+    val enabled: Boolean = false,
+)
+
 @JsonSubTypes(
     JsonSubTypes.Type(CommandExecution::class, name = "command"),
     JsonSubTypes.Type(ScriptExecution::class, name = "script")
@@ -83,7 +88,8 @@ sealed class Execution(
     val defaultParameters: Map<String, String>,
     val addOutputToResponse: Boolean,
     val timeout: Long,
-    val interruptOnTimeout: Boolean
+    val interruptOnTimeout: Boolean,
+    val messagePublication: PublicationConfiguration?,
 )
 
 class CommandExecution(
@@ -92,14 +98,16 @@ class CommandExecution(
     defaultParameters: Map<String, String> = emptyMap(),
     addOutputToResponse: Boolean = true,
     timeout: Long,
-    interruptOnTimeout: Boolean = false
+    interruptOnTimeout: Boolean = false,
+    messagePublication: PublicationConfiguration? = null,
 ) : Execution(
     alias,
     execution,
     defaultParameters,
     addOutputToResponse,
     timeout,
-    interruptOnTimeout
+    interruptOnTimeout,
+    messagePublication,
 )
 
 class ScriptExecution(
@@ -110,14 +118,16 @@ class ScriptExecution(
     defaultParameters: Map<String, String> = emptyMap(),
     addOutputToResponse: Boolean = true,
     timeout: Long,
-    interruptOnTimeout: Boolean = false
+    interruptOnTimeout: Boolean = false,
+    messagePublication: PublicationConfiguration? = null,
 ) : Execution(
     alias,
     if (options.isBlank()) scriptPath else "$scriptPath $options",
     defaultParameters,
     addOutputToResponse,
     timeout,
-    interruptOnTimeout
+    interruptOnTimeout,
+    messagePublication,
 )
 
 private fun <T> checkCollisions(name: String, executions: List<T>, aliasExtractor: T.() -> String) {

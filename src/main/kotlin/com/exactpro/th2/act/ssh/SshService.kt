@@ -21,12 +21,13 @@ import com.exactpro.th2.act.ssh.cfg.ConnectionParameters
 import com.exactpro.th2.act.ssh.cfg.EndpointParameters
 import com.exactpro.th2.act.ssh.cfg.Execution
 import com.exactpro.th2.act.ssh.cfg.ScriptExecution
+import com.exactpro.th2.act.ssh.messages.MessagePublisher
+import com.exactpro.th2.common.grpc.MessageID
 import mu.KotlinLogging
 import org.apache.commons.text.StringSubstitutor
 import org.apache.commons.text.lookup.StringLookupFactory
 import org.apache.sshd.client.ClientBuilder
 import org.apache.sshd.client.SshClient
-import org.apache.sshd.client.channel.ChannelShell
 import org.apache.sshd.client.channel.ClientChannelEvent
 import org.apache.sshd.client.keyverifier.AcceptAllServerKeyVerifier
 import org.apache.sshd.client.session.ClientSession
@@ -44,7 +45,8 @@ import java.util.EnumSet
 
 class SshService(
     private val configuration: ConnectionParameters,
-    private val executions: List<Execution>
+    private val executions: List<Execution>,
+    private val publisher: MessagePublisher,
 ) : AutoCloseable {
 
     private val sshClient: SshClient = ClientBuilder.builder()
@@ -75,10 +77,13 @@ class SshService(
     }
 
     @Throws(SocketTimeoutException::class, RemoteException::class)
-    fun execute(alias: String, parameters: Map<String, String>, endpoint: EndpointParameters): ExecutionResult {
-        return when (val execution: Execution = findExecutionByAlias(alias)) {
+    fun execute(alias: String, parameters: Map<String, String>, endpoint: EndpointParameters): ResultWrapper {
+        val execution = findExecutionByAlias(alias)
+        return when (execution) {
             is CommandExecution -> executeCommand(execution, parameters, endpoint)
             is ScriptExecution -> executeScript(execution, parameters, endpoint)
+        }.let { result ->
+            ResultWrapper(result, publishResult(result, execution, parameters, endpoint))
         }
     }
 
@@ -123,6 +128,15 @@ class SshService(
         val result = executeCommand(command, execution.addOutputToResponse, execution.executionTimeout, execution.interruptOnTimeout)
         LOGGER.debug { "Command executed with exit code: ${result.exitCode}" }
         return result
+    }
+
+    private fun publishResult(
+        result: ExecutionResult,
+        execution: Execution,
+        parameters: Map<String, String>,
+        endpoint: EndpointParameters,
+    ): MessageID? = with(result.commonResult) {
+        output?.let { publisher.publish(it, execution, parameters, endpoint.alias) }
     }
 
     override fun close() {

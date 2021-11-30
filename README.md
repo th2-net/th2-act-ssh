@@ -1,4 +1,4 @@
-# th2 act ssh (1.0.1)
+# th2 act ssh (1.1.0)
 
 ## Overview
 
@@ -13,6 +13,16 @@ metadata:
   name: act
 spec:
   type: th2-act
+  pins:
+    - name: server
+      connection-type: grpc
+    - name: output
+      connection-type: mq
+      attributes:
+        - "publish"
+        - "store"
+        - "raw"
+        - "first"
   custom-config:
     connection:
       endpoints:
@@ -36,6 +46,8 @@ spec:
     reporting:
       rootName: YourActSsh
       addStackStraceForErrors: true
+    messagePublication:
+      enabled: false
     executions:
       - type: command
         alias: YourCommand
@@ -44,6 +56,8 @@ spec:
         timeout: 100
         defaultParameters:
           base_dir: dir
+        messagePublication:
+          enabled: true
       - type: script
         alias: YouScript
         scriptPath: ~/script.sh
@@ -55,6 +69,14 @@ spec:
           option_A: "some_value"
     
 ```
+
+#### Required pins
+
+The act-ssh should have the following pins:
+
++ One for gRPC server with `connection-type`=**grpc** (required pin)
++ Pins for message publication with `connection-type`=**mq**. _Those pins are required only if you are using message publication_.
+  The following attributes are required for those pins: `publish`, `raw`, `first`
 
 ### Connection
 
@@ -107,6 +129,45 @@ The name of the root event in the report. This event will be used to store event
 If it is enabled the full stacktrace will be added to the event if an exception was thrown during execution.
 Otherwise, the error will be added to the event in a short form (only error messages)
 
+### Message publication
+
+This block is used to configure the default behavior related to message publication (can be overridden for certain execution).
+By default, if this block is missing the publication is disabled.
+**If publication is enabled the alias corresponding to the used endpoint will be taken for message publication.**
+
+The content of the published message is the execution output.
+The published message will have the following properties attached:
++ **act.ssh.execution-alias** - the information about the alias that was executed;
++ call parameters - the call parameters will be put into properties under **their names without changes**.
+
+See the example of the message:
+```
+messages {
+  metadata {
+    id {
+      connection_id {
+        session_alias: "test-msg-alias"
+      }
+      sequence: 1637232067339937000
+      direction: FIRST
+    }
+    properties {
+      key: "act.ssh.execution-alias"
+      value: "test-alias"
+    }
+    properties {
+      key: "test-param"
+      value: "value"
+    }
+  }
+  body: "you command output"
+}
+```
+
+#### enabled
+
+Specifies if the publication is enabled or not. The default value is `false`
+
 ### Executions
 
 This block describes which actions are available for this act. It has two types of actions:
@@ -137,6 +198,11 @@ If it is `true` the action will interrupt command on timeout using the SIGHUP si
 
 The list default values of the parameters that should be used if the parameter was not specified in the execution request;
 
+##### messagePublication
+
+Configuration for message publication related to the particular execution. **Overrides the parameters from the root block**.
+Please, see the message publication block description [here](#message-publication).
+
 #### Command
 
 ##### execution
@@ -154,6 +220,14 @@ The path to the script that should be executed. NOTE: it is always better to spe
 The options that will be added to the script. As the result the following command will be executed `${scriptPath} ${options}`
 
 ## Release Notes
+
+### 1.1.0
+
+#### Changed:
+
++ Update common version from 3.13.4 to 3.29.1
++ Correct responses on gRPC request when an error is occurred during execution
++ Add ability to send command output as a raw message
 
 ### 1.0.1
 

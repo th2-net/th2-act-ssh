@@ -29,10 +29,12 @@ import com.exactpro.th2.common.event.EventUtils.createMessageBean
 import com.exactpro.th2.common.event.IBodyData
 import com.exactpro.th2.common.grpc.EventBatch
 import com.exactpro.th2.common.grpc.EventID
+import com.exactpro.th2.common.grpc.MessageID
 import com.exactpro.th2.common.grpc.RequestStatus
 import com.exactpro.th2.common.message.toJson
 import com.exactpro.th2.common.schema.message.MessageRouter
 import com.google.protobuf.Empty
+import io.grpc.Status
 import io.grpc.stub.StreamObserver
 import mu.KotlinLogging
 import org.apache.commons.lang3.exception.ExceptionUtils
@@ -52,24 +54,29 @@ class ActHandler(
         try {
             val endpointAlias: String? = request.endpointAlias.ifBlank { null }
             val endpoint = service.findEndpoint(endpointAlias)
-            val result = service.execute(request.executionAlias, request.parametersMap, endpoint)
+            val (result: ExecutionResult, messageId: MessageID?) = service.execute(request.executionAlias, request.parametersMap, endpoint)
             val response: ExecutionResponse = result.commonResult.toExecutionResponse()
             responseObserver.onNext(response)
-            reportExecution(request, result, timeOfStart)
+            reportExecution(request, result, timeOfStart, messageId)
+            responseObserver.onCompleted()
         } catch (ex: Exception) {
             LOGGER.error(ex) { "Cannot process request ${request.toJson()}" }
             reportError(request, ex)
-            responseObserver.onError(ex)
+            responseObserver.onErrorWithStatus(ex, Status.INTERNAL)
         } finally {
-            responseObserver.onCompleted()
             LOGGER.debug { "Processing finished in ${Duration.between(timeOfStart, Instant.now())} for request ${request.toJson()}" }
         }
+    }
+
+    private fun StreamObserver<ExecutionResponse>.onErrorWithStatus(ex: Exception, status: Status) {
+        onError(status.withDescription(ExceptionUtils.getRootCauseMessage(ex) ?: ex.toString()).asRuntimeException())
     }
 
     private fun reportExecution(
         request: ExecutionRequest,
         result: ExecutionResult,
-        timeOfStart: Instant
+        timeOfStart: Instant,
+        messageId: MessageID?
     ) {
         try {
             val commonResult = result.commonResult
@@ -83,6 +90,7 @@ class ActHandler(
                 .bodyData(createMessageBean("Output: ${commonResult.output ?: "<output disabled for command>"}"))
                 .bodyData(createMessageBean("Error output: ${commonResult.errOut}"))
                 .apply {
+                    messageId?.let { messageID(it) }
                     val bodyParts: List<IBodyData> = result.toEventBodyParts()
                     bodyParts.forEach { bodyData(it) }
                 }
@@ -138,7 +146,7 @@ class ActHandler(
         @JvmStatic
         private fun MessageRouter<EventBatch>.storeSingle(event: Event, parent: EventID) {
             send(EventBatch.newBuilder()
-                .addEvents(event.toProtoEvent(parent.id))
+                .addEvents(event.toProto(parent))
                 .build())
         }
 

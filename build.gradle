@@ -67,7 +67,7 @@ jar {
 dependencies {
     api platform('com.exactpro.th2:bom:3.0.0')
 
-    api "com.exactpro.th2:common:3.29.2"
+    api "com.exactpro.th2:common:3.31.0"
     api "com.exactpro.th2:grpc-act-ssh:1.1.0"
 
     implementation "com.fasterxml.jackson.core:jackson-core"
