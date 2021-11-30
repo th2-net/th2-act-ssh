@@ -16,6 +16,10 @@
 
 package com.exactpro.th2.act.ssh
 
+import com.exactpro.th2.common.grpc.MessageID
+
+data class ResultWrapper(val result: ExecutionResult, val messageID: MessageID?)
+
 sealed class ExecutionResult(
     val commonResult: CommonExecutionResult
 )

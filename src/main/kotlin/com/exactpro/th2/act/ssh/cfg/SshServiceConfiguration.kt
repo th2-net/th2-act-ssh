@@ -70,19 +70,7 @@ class EndpointParameters(
 
 class PublicationConfiguration(
     val enabled: Boolean = false,
-    val sessionAlias: String = DEFAULT_SESSION_ALIAS
-) {
-    init {
-        if (enabled) {
-            check(sessionAlias != DEFAULT_SESSION_ALIAS) {
-                "session_alias parameter must be overridden"
-            }
-        }
-    }
-    companion object {
-        private const val DEFAULT_SESSION_ALIAS = "unknown"
-    }
-}
+)
 
 @JsonSubTypes(
     JsonSubTypes.Type(CommandExecution::class, name = "command"),

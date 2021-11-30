@@ -29,9 +29,12 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
+import strikt.assertions.isGreaterThan
 import strikt.assertions.isNotEqualTo
+import strikt.assertions.isNotNull
 import strikt.assertions.single
 
 class TestMessagePublisher {
@@ -43,39 +46,46 @@ class TestMessagePublisher {
 
         @Test
         fun `publishes output when enabled`() {
-            publisher.publish("test", createExecution("test-alias", "test-msg-alias"), mapOf("test-param" to "value"))
+            val messageID = publisher.publish("test", createExecution("test-alias"), mapOf("test-param" to "value"), "test-msg-alias")
 
             val captor = argumentCaptor<RawMessageBatch>()
             verify(router).sendAll(captor.capture(), anyVararg())
-            expectThat(captor.firstValue)
-                .get { messagesList }
-                .single()
-                .apply {
-                    get { metadata }.apply {
-                        get { id }.apply {
-                            get { direction }.isEqualTo(Direction.FIRST)
-                            get { sequence }.isNotEqualTo(0)
-                            get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
-                        }
-                        get { propertiesMap }.isEqualTo(mapOf(
-                            "act.ssh.execution-alias" to "test-alias",
-                            "test-param" to "value"
-                        ))
-                    }
-                    get { body.toString(Charsets.UTF_8) }.isEqualTo("test")
+            expect {
+                that(messageID).isNotNull().apply {
+                    get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
+                    get { direction }.isEqualTo(Direction.FIRST)
+                    get { sequence }.isGreaterThan(0)
                 }
+                that(captor.firstValue)
+                    .get { messagesList }
+                    .single()
+                    .apply {
+                        get { metadata }.apply {
+                            get { id }.apply {
+                                get { direction }.isEqualTo(Direction.FIRST)
+                                get { sequence }.isNotEqualTo(0)
+                                get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
+                            }
+                            get { propertiesMap }.isEqualTo(mapOf(
+                                "act.ssh.execution-alias" to "test-alias",
+                                "test-param" to "value"
+                            ))
+                        }
+                        get { body.toString(Charsets.UTF_8) }.isEqualTo("test")
+                    }
+            }
         }
 
         @Test
         fun `does not publish if no publication parameters set`() {
-            publisher.publish("test", createExecution("test-alias", "test-msg-alias", enabled = null), mapOf("test-param" to "value"))
+            publisher.publish("test", createExecution("test-alias", enabled = null), mapOf("test-param" to "value"), "test-msg-alias")
 
             verify(router, never()).sendAll(any(), anyVararg())
         }
 
         @Test
         fun `does not publish if no publication is disabled`() {
-            publisher.publish("test", createExecution("test-alias", "test-msg-alias", enabled = false), mapOf("test-param" to "value"))
+            publisher.publish("test", createExecution("test-alias", enabled = false), mapOf("test-param" to "value"), "test-msg-alias")
 
             verify(router, never()).sendAll(any(), anyVararg())
         }
@@ -85,72 +95,85 @@ class TestMessagePublisher {
     inner class WithDefaultConfiguration {
         private val publisher = MessagePublisher(router, PublicationConfiguration(
             enabled = true,
-            sessionAlias = "default"
         ))
 
         @Test
         fun `publishes output when enabled`() {
-            publisher.publish("test", createExecution("test-alias", "test-msg-alias"), mapOf("test-param" to "value"))
+            val messageID = publisher.publish("test", createExecution("test-alias"), mapOf("test-param" to "value"), "test-msg-alias")
 
             val captor = argumentCaptor<RawMessageBatch>()
             verify(router).sendAll(captor.capture(), anyVararg())
-            expectThat(captor.firstValue)
-                .get { messagesList }
-                .single()
-                .apply {
-                    get { metadata }.apply {
-                        get { id }.apply {
-                            get { direction }.isEqualTo(Direction.FIRST)
-                            get { sequence }.isNotEqualTo(0)
-                            get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
-                        }
-                        get { propertiesMap }.isEqualTo(mapOf(
-                            "act.ssh.execution-alias" to "test-alias",
-                            "test-param" to "value"
-                        ))
-                    }
-                    get { body.toString(Charsets.UTF_8) }.isEqualTo("test")
+            expect {
+                that(messageID).isNotNull().apply {
+                    get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
+                    get { direction }.isEqualTo(Direction.FIRST)
+                    get { sequence }.isGreaterThan(0)
                 }
+                that(captor.firstValue)
+                    .get { messagesList }
+                    .single()
+                    .apply {
+                        get { metadata }.apply {
+                            get { id }.apply {
+                                get { direction }.isEqualTo(Direction.FIRST)
+                                get { sequence }.isNotEqualTo(0)
+                                get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
+                            }
+                            get { propertiesMap }.isEqualTo(mapOf(
+                                "act.ssh.execution-alias" to "test-alias",
+                                "test-param" to "value"
+                            ))
+                        }
+                        get { body.toString(Charsets.UTF_8) }.isEqualTo("test")
+                    }
+            }
         }
 
         @Test
         fun `publishes with default parameters`() {
-            publisher.publish("test", createExecution("test-alias", "test-msg-alias", enabled = null), mapOf("test-param" to "value"))
+            val messageID = publisher.publish("test", createExecution("test-alias", enabled = null), mapOf("test-param" to "value"), "test-msg-alias")
 
             val captor = argumentCaptor<RawMessageBatch>()
             verify(router).sendAll(captor.capture(), anyVararg())
-            expectThat(captor.firstValue)
-                .get { messagesList }
-                .single()
-                .apply {
-                    get { metadata }.apply {
-                        get { id }.apply {
-                            get { direction }.isEqualTo(Direction.FIRST)
-                            get { sequence }.isNotEqualTo(0)
-                            get { connectionId }.get { sessionAlias }.isEqualTo("default")
-                        }
-                        get { propertiesMap }.isEqualTo(mapOf(
-                            "act.ssh.execution-alias" to "test-alias",
-                            "test-param" to "value"
-                        ))
-                    }
-                    get { body.toString(Charsets.UTF_8) }.isEqualTo("test")
+            expect {
+                that(messageID).isNotNull().apply {
+                    get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
+                    get { direction }.isEqualTo(Direction.FIRST)
+                    get { sequence }.isGreaterThan(0)
                 }
+                that(captor.firstValue)
+                    .get { messagesList }
+                    .single()
+                    .apply {
+                        get { metadata }.apply {
+                            get { id }.apply {
+                                get { direction }.isEqualTo(Direction.FIRST)
+                                get { sequence }.isNotEqualTo(0)
+                                get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
+                            }
+                            get { propertiesMap }.isEqualTo(mapOf(
+                                "act.ssh.execution-alias" to "test-alias",
+                                "test-param" to "value"
+                            ))
+                        }
+                        get { body.toString(Charsets.UTF_8) }.isEqualTo("test")
+                    }
+            }
         }
 
         @Test
         fun `does not publish if no publication is disabled`() {
-            publisher.publish("test", createExecution("test-alias", "test-msg-alias", enabled = false), mapOf("test-param" to "value"))
+            publisher.publish("test", createExecution("test-alias", enabled = false), mapOf("test-param" to "value"), "test-msg-alias")
 
             verify(router, never()).sendAll(any(), anyVararg())
         }
     }
 
-    private fun createExecution(commandAlias: String, sessionAlias: String, enabled: Boolean? = true) = CommandExecution(
+    private fun createExecution(commandAlias: String, enabled: Boolean? = true) = CommandExecution(
         alias = commandAlias,
         execution = "data",
         addOutputToResponse = true,
         timeout = 100,
-        messagePublication = enabled?.let { PublicationConfiguration(it, sessionAlias) }
+        messagePublication = enabled?.let { PublicationConfiguration(it) }
     )
 }

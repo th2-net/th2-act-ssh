@@ -44,7 +44,7 @@ class TestSshServiceManual {
     @Test
     fun valid() {
         val sleepTime = 1
-        val result = sshService.execute("false", mapOf(parameterName to "$sleepTime"), endpoint)
+        val (result, _) = sshService.execute("false", mapOf(parameterName to "$sleepTime"), endpoint)
         with(result.commonResult) {
             assertAll(
                 { assertEquals(0, exitCode) },
@@ -63,7 +63,7 @@ class TestSshServiceManual {
     @Test
     fun interrupted() {
         val sleepTime = 3
-        val result = sshService.execute("true", mapOf(parameterName to "$sleepTime"), endpoint)
+        val (result, _) = sshService.execute("true", mapOf(parameterName to "$sleepTime"), endpoint)
         with(result.commonResult) {
             assertAll(
                 { assertNull(exitCode) },

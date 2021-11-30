@@ -48,7 +48,6 @@ spec:
       addStackStraceForErrors: true
     messagePublication:
       enabled: false
-      sessionAlias: "default-session-alias"
     executions:
       - type: command
         alias: YourCommand
@@ -59,7 +58,6 @@ spec:
           base_dir: dir
         messagePublication:
           enabled: true
-          sessionAlias: "another-session-alias"
       - type: script
         alias: YouScript
         scriptPath: ~/script.sh
@@ -135,6 +133,7 @@ Otherwise, the error will be added to the event in a short form (only error mess
 
 This block is used to configure the default behavior related to message publication (can be overridden for certain execution).
 By default, if this block is missing the publication is disabled.
+**If publication is enabled the alias corresponding to the used endpoint will be taken for message publication.**
 
 The content of the published message is the execution output.
 The published message will have the following properties attached:
@@ -168,10 +167,6 @@ messages {
 #### enabled
 
 Specifies if the publication is enabled or not. The default value is `false`
-
-#### sessionAlias
-
-The session alias that should be used for published messages. If the publication is disabled the parameter can be omitted.
 
 ### Executions
 

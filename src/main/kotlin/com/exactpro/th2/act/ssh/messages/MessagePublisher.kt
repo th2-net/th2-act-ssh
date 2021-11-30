@@ -19,6 +19,7 @@ package com.exactpro.th2.act.ssh.messages
 import com.exactpro.th2.act.ssh.cfg.Execution
 import com.exactpro.th2.act.ssh.cfg.PublicationConfiguration
 import com.exactpro.th2.common.grpc.Direction
+import com.exactpro.th2.common.grpc.MessageID
 import com.exactpro.th2.common.grpc.RawMessage
 import com.exactpro.th2.common.grpc.RawMessageBatch
 import com.exactpro.th2.common.schema.message.MessageRouter
@@ -45,44 +46,41 @@ class MessagePublisher(
     fun publish(
         output: String,
         execution: Execution,
-        parameters: Map<String, String>
-    ) {
+        parameters: Map<String, String>,
+        alias: String
+    ): MessageID? {
         val cfg = execution.messagePublication ?: defaultConfiguration
         if (!cfg.enabled) {
             LOGGER.info { "Skip output publication for command ${execution.alias}" }
-            return
+            return null
         }
-        val info = getInfoForAlias(cfg.sessionAlias)
-        runCatching {
+        val info = getInfoForAlias(alias)
+        return runCatching {
+            val builder = RawMessage.newBuilder()
+                .setBody(ByteString.copyFrom(output, Charsets.UTF_8))
             synchronized(info) {
-                router.sendAll(RawMessageBatch.newBuilder()
-                    .addMessages(
-                        RawMessage.newBuilder()
-                            .setBody(ByteString.copyFrom(output, Charsets.UTF_8))
-                            .fillMetadata(info, cfg, execution, parameters)
-                    )
-                    .build(),
-                    QueueAttribute.FIRST.value
-                )
+                val message = builder.fillMetadata(info, execution, parameters, alias).build()
+                router.sendAll(RawMessageBatch.newBuilder().addMessages(message).build(), QueueAttribute.FIRST.value)
+                message.metadata.id
             }
         }.onSuccess {
-            LOGGER.info { "Output for command ${execution.alias} with parameters $parameters was published under session alias ${cfg.sessionAlias}" }
+            LOGGER.info { "Output for command ${execution.alias} with parameters $parameters was published under session alias $alias" }
         }.onFailure {
             LOGGER.error(it) { "Cannot publish output for command ${execution.alias} with parameters $parameters" }
-        }
+        }.getOrNull()
     }
 
     private fun RawMessage.Builder.fillMetadata(
         info: SessionInfo,
-        cfg: PublicationConfiguration,
         execution: Execution,
         parameters: Map<String, String>,
+        alias: String,
     ) = apply {
         metadataBuilder.apply {
             idBuilder.apply {
                 direction = Direction.FIRST
                 sequence = info.getAndIncrement()
-                connectionIdBuilder.sessionAlias = cfg.sessionAlias
+                connectionIdBuilder.sessionAlias = alias
             }
             putProperties(EXECUTION_ALIAS_PARAMETER, execution.alias)
             putAllProperties(parameters)

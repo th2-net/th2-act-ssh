@@ -29,6 +29,7 @@ import com.exactpro.th2.common.event.EventUtils.createMessageBean
 import com.exactpro.th2.common.event.IBodyData
 import com.exactpro.th2.common.grpc.EventBatch
 import com.exactpro.th2.common.grpc.EventID
+import com.exactpro.th2.common.grpc.MessageID
 import com.exactpro.th2.common.grpc.RequestStatus
 import com.exactpro.th2.common.message.toJson
 import com.exactpro.th2.common.schema.message.MessageRouter
@@ -53,10 +54,10 @@ class ActHandler(
         try {
             val endpointAlias: String? = request.endpointAlias.ifBlank { null }
             val endpoint = service.findEndpoint(endpointAlias)
-            val result = service.execute(request.executionAlias, request.parametersMap, endpoint)
+            val (result: ExecutionResult, messageId: MessageID?) = service.execute(request.executionAlias, request.parametersMap, endpoint)
             val response: ExecutionResponse = result.commonResult.toExecutionResponse()
             responseObserver.onNext(response)
-            reportExecution(request, result, timeOfStart)
+            reportExecution(request, result, timeOfStart, messageId)
             responseObserver.onCompleted()
         } catch (ex: Exception) {
             LOGGER.error(ex) { "Cannot process request ${request.toJson()}" }
@@ -74,7 +75,8 @@ class ActHandler(
     private fun reportExecution(
         request: ExecutionRequest,
         result: ExecutionResult,
-        timeOfStart: Instant
+        timeOfStart: Instant,
+        messageId: MessageID?
     ) {
         try {
             val commonResult = result.commonResult
@@ -88,6 +90,7 @@ class ActHandler(
                 .bodyData(createMessageBean("Output: ${commonResult.output ?: "<output disabled for command>"}"))
                 .bodyData(createMessageBean("Error output: ${commonResult.errOut}"))
                 .apply {
+                    messageId?.let { messageID(it) }
                     val bodyParts: List<IBodyData> = result.toEventBodyParts()
                     bodyParts.forEach { bodyData(it) }
                 }
