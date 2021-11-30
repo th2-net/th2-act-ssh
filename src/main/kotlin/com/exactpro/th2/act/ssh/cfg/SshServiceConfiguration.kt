@@ -119,7 +119,7 @@ class ScriptExecution(
     addOutputToResponse: Boolean = true,
     timeout: Long,
     interruptOnTimeout: Boolean = false,
-    messagePublication: PublicationConfiguration?,
+    messagePublication: PublicationConfiguration? = null,
 ) : Execution(
     alias,
     if (options.isBlank()) scriptPath else "$scriptPath $options",
