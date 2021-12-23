@@ -5,7 +5,9 @@ on:
     branches-ignore:
       - master
       - version-*
-
+      - dependabot*
+    paths-ignore:
+      - README.md
 
 jobs:
   build:
@@ -43,4 +45,6 @@ jobs:
         with:
           push: true
           tags: ghcr.io/${{ github.repository }}:${{ steps.release_ver.outputs.value }}
-          labels: com.exactpro.th2.${{ steps.meta.outputs.REPOSITORY_NAME }}=${{ steps.ver.outputs.value }}
+          labels: com.exactpro.th2.${{ steps.meta.outputs.REPOSITORY_NAME }}=${{ steps.release_ver.outputs.value }}
+          build-args: |
+            release_version=${{ steps.release_ver.outputs.value }}

@@ -29,7 +29,6 @@ repositories {
         name 'MavenLocal'
         url sharedDir
     }
-    mavenLocal()
     mavenCentral()
     maven {
         name 'Sonatype_snapshots'
@@ -39,10 +38,7 @@ repositories {
         name 'Sonatype_releases'
         url 'https://s01.oss.sonatype.org/content/repositories/releases/'
     }
-    maven {
-        name 'Nexus'
-        url 'https://nexus.exactpro.com/repository/oss-maven'
-    }
+    mavenLocal()
 
     configurations.all {
         resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
