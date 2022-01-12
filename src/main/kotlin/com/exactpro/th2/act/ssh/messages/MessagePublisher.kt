@@ -22,6 +22,7 @@ import com.exactpro.th2.common.grpc.Direction
 import com.exactpro.th2.common.grpc.MessageID
 import com.exactpro.th2.common.grpc.RawMessage
 import com.exactpro.th2.common.grpc.RawMessageBatch
+import com.exactpro.th2.common.message.toTimestamp
 import com.exactpro.th2.common.schema.message.MessageRouter
 import com.exactpro.th2.common.schema.message.QueueAttribute
 import com.google.protobuf.ByteString
@@ -82,6 +83,7 @@ class MessagePublisher(
                 sequence = info.getAndIncrement()
                 connectionIdBuilder.sessionAlias = alias
             }
+            timestamp = Instant.now().toTimestamp()
             putProperties(EXECUTION_ALIAS_PARAMETER, execution.alias)
             putAllProperties(parameters)
         }
