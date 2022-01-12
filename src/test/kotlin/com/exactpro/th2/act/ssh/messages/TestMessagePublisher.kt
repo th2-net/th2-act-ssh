@@ -66,6 +66,10 @@ class TestMessagePublisher {
                                 get { sequence }.isNotEqualTo(0)
                                 get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
                             }
+                            get { timestamp }.apply {
+                                get { seconds }.isGreaterThan(0)
+                                get { nanos }.isGreaterThan(0)
+                            }
                             get { propertiesMap }.isEqualTo(mapOf(
                                 "act.ssh.execution-alias" to "test-alias",
                                 "test-param" to "value"
@@ -119,6 +123,10 @@ class TestMessagePublisher {
                                 get { sequence }.isNotEqualTo(0)
                                 get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
                             }
+                            get { timestamp }.apply {
+                                get { seconds }.isGreaterThan(0)
+                                get { nanos }.isGreaterThan(0)
+                            }
                             get { propertiesMap }.isEqualTo(mapOf(
                                 "act.ssh.execution-alias" to "test-alias",
                                 "test-param" to "value"
@@ -150,6 +158,10 @@ class TestMessagePublisher {
                                 get { direction }.isEqualTo(Direction.FIRST)
                                 get { sequence }.isNotEqualTo(0)
                                 get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
+                            }
+                            get { timestamp }.apply {
+                                get { seconds }.isGreaterThan(0)
+                                get { nanos }.isGreaterThan(0)
                             }
                             get { propertiesMap }.isEqualTo(mapOf(
                                 "act.ssh.execution-alias" to "test-alias",
