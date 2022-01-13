@@ -172,7 +172,7 @@ class SshService(
                     channel.out = out
                     channel.isUsePty = true // This option is required to send SIGHUP signal to the attached process when the channel is closed
                     channel.open().verify(timeout)
-                    val results: Set<ClientChannelEvent> = channel.waitFor(EnumSet.of(ClientChannelEvent.EXIT_STATUS, ClientChannelEvent.CLOSED), timeout)
+                    val results: Set<ClientChannelEvent> = channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), timeout)
                     if (!interruptOnTimeout && results.contains(ClientChannelEvent.TIMEOUT)) {
                         throw SocketTimeoutException("Cannot execute command $command for specified timeout: $timeout")
                     }
