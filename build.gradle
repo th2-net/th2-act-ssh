@@ -70,7 +70,11 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind"
 
     implementation "org.slf4j:slf4j-api"
-    implementation 'org.apache.sshd:apache-sshd:2.9.2'
+    implementation('org.apache.sshd:apache-sshd:2.9.2') {
+        implementation("org.springframework:spring-beans:5.3.18") {
+            because("there is no version of apache-sshd without vulnerability. Only maintanance version is affected.")
+        }
+    }
     implementation "org.apache.commons:commons-text:1.10"
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
