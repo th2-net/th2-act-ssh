@@ -73,7 +73,10 @@ public class ActMain {
                     .type("Microservice")
                     .status(Status.PASSED);
 
-            eventBatchRouter.send(EventBatch.newBuilder().addEvents(rootEvent.toProto(null)).build());
+            eventBatchRouter.send(
+                EventBatch.newBuilder()
+                    .addEvents(rootEvent.toProto(factory.getBoxConfiguration().getBookName())).build()
+            );
 
             EventID rootEventId = EventID.newBuilder().setId(rootEvent.getId()).build();
             var actHandler = new ActHandler(
