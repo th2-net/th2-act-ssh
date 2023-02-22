@@ -17,8 +17,10 @@
 package com.exactpro.th2.act.ssh.cfg
 
 import com.exactpro.th2.common.schema.configuration.ConfigurationManager
+import com.exactpro.th2.common.schema.dictionary.DictionaryType
 import com.exactpro.th2.common.schema.factory.AbstractCommonFactory
 import com.exactpro.th2.common.schema.factory.extensions.getCustomConfiguration
+import java.io.InputStream
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import strikt.api.expectThat
@@ -207,13 +209,21 @@ class TestSshServiceConfiguration {
                 return customCfg
             }
 
-            override fun getPathToDictionariesDir(): Path {
-                TODO("Not yet implemented")
-            }
+            override fun getPathToDictionaryTypesDir(): Path { TODO("Not yet implemented") }
 
-            override fun getOldPathToDictionariesDir(): Path {
-                TODO("Not yet implemented")
-            }
+            override fun getPathToDictionaryAliasesDir(): Path { TODO("Not yet implemented") }
+
+            override fun getOldPathToDictionariesDir(): Path { TODO("Not yet implemented") }
+
+            override fun loadSingleDictionary(): InputStream { TODO("Not yet implemented") }
+
+            override fun getDictionaryAliases(): MutableSet<String> { TODO("Not yet implemented") }
+
+            override fun loadDictionary(alias: String?): InputStream { TODO("Not yet implemented") }
+
+            override fun readDictionary(): InputStream { TODO("Not yet implemented") }
+
+            override fun readDictionary(dictionaryType: DictionaryType?): InputStream { TODO("Not yet implemented") }
         }
 
         return factory.getCustomConfiguration()

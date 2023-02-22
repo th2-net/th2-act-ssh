@@ -31,7 +31,6 @@ import org.apache.sshd.client.SshClient
 import org.apache.sshd.client.channel.ClientChannelEvent
 import org.apache.sshd.client.keyverifier.AcceptAllServerKeyVerifier
 import org.apache.sshd.client.session.ClientSession
-import org.apache.sshd.common.util.io.NullOutputStream
 import org.apache.sshd.core.CoreModuleProperties
 import org.apache.sshd.mina.MinaServiceFactoryFactory
 import org.apache.sshd.scp.client.ScpClientCreator
@@ -42,6 +41,7 @@ import java.nio.file.Path
 import java.rmi.RemoteException
 import java.time.Duration
 import java.util.EnumSet
+import org.apache.sshd.common.util.io.output.NullOutputStream
 
 class SshService(
     private val configuration: ConnectionParameters,
