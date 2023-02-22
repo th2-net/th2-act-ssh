@@ -82,8 +82,8 @@ class MessagePublisher(
                 direction = Direction.FIRST
                 sequence = info.getAndIncrement()
                 connectionIdBuilder.sessionAlias = alias
+                timestamp = Instant.now().toTimestamp()
             }
-            timestamp = Instant.now().toTimestamp()
             putProperties(EXECUTION_ALIAS_PARAMETER, execution.alias)
             putAllProperties(parameters)
         }

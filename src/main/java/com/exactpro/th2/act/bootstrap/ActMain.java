@@ -65,17 +65,7 @@ public class ActMain {
             var sshService = new SshService(configuration.getConnection(), configuration.getExecutions(), publisher);
             resources.add(sshService);
 
-            String rootName = configuration.getReporting().getRootName();
-            String rootEventName = rootName + "_" + Instant.now();
-            Event rootEvent = Event.start()
-                    .endTimestamp()
-                    .name(rootEventName)
-                    .type("Microservice")
-                    .status(Status.PASSED);
-
-            eventBatchRouter.send(EventBatch.newBuilder().addEvents(rootEvent.toProto(null)).build());
-
-            EventID rootEventId = EventID.newBuilder().setId(rootEvent.getId()).build();
+            EventID rootEventId = factory.getRootEventId();
             var actHandler = new ActHandler(
                     sshService,
                     eventBatchRouter,
