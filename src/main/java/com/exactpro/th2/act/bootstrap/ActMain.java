@@ -60,7 +60,11 @@ public class ActMain {
 
             var configuration = factory.getCustomConfiguration(SshServiceConfiguration.class);
 
-            var publisher = new MessagePublisher(factory.getMessageRouterRawBatch(), configuration.getMessagePublication());
+            var publisher = new MessagePublisher(
+                    factory.getMessageRouterRawBatch(),
+                    configuration.getMessagePublication(),
+                    factory.getBoxConfiguration().getBookName()
+            );
 
             var sshService = new SshService(configuration.getConnection(), configuration.getExecutions(), publisher);
             resources.add(sshService);
