@@ -4,6 +4,7 @@ plugins {
     id 'java'
     id 'java-library'
     id 'application'
+    id "org.owasp.dependencycheck" version "8.2.1"
 }
 
 ext {
@@ -57,6 +58,16 @@ jar {
                 'Implementation-Vendor-Id': 'com.exactpro',
                 'Implementation-Version':   project.version
         )
+    }
+}
+
+dependencyCheck {
+    formats = ['SARIF', 'JSON', 'HTML']
+    failBuildOnCVSS = 5
+    analyzers {
+        assemblyEnabled = false
+        nugetconfEnabled = false
+        nodeEnabled = false
     }
 }
 
