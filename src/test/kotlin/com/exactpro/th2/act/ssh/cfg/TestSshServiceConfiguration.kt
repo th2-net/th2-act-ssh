@@ -19,6 +19,7 @@ package com.exactpro.th2.act.ssh.cfg
 import com.exactpro.th2.common.schema.configuration.ConfigurationManager
 import com.exactpro.th2.common.schema.dictionary.DictionaryType
 import com.exactpro.th2.common.schema.factory.AbstractCommonFactory
+import com.exactpro.th2.common.schema.factory.FactorySettings
 import com.exactpro.th2.common.schema.factory.extensions.getCustomConfiguration
 import java.io.InputStream
 import org.junit.jupiter.api.Test
@@ -200,19 +201,18 @@ class TestSshServiceConfiguration {
     }
 
     private inline fun <reified T> loadConfiguration(customCfg: Path): T {
-        val factory = object : AbstractCommonFactory() {
-            override fun getConfigurationManager(): ConfigurationManager {
-                return ConfigurationManager(emptyMap())
-            }
+        val factory = object : AbstractCommonFactory(FactorySettings()) {
 
-            override fun getPathToCustomConfiguration(): Path {
-                return customCfg
-            }
+            override fun getConfigurationManager(): ConfigurationManager { return ConfigurationManager(emptyMap()) }
 
+            override fun getPathToCustomConfiguration(): Path { return customCfg }
+
+            @Deprecated("Deprecated in Java")
             override fun getPathToDictionaryTypesDir(): Path { TODO("Not yet implemented") }
 
             override fun getPathToDictionaryAliasesDir(): Path { TODO("Not yet implemented") }
 
+            @Deprecated("Deprecated in Java")
             override fun getOldPathToDictionariesDir(): Path { TODO("Not yet implemented") }
 
             override fun loadSingleDictionary(): InputStream { TODO("Not yet implemented") }
@@ -221,8 +221,10 @@ class TestSshServiceConfiguration {
 
             override fun loadDictionary(alias: String?): InputStream { TODO("Not yet implemented") }
 
+            @Deprecated("Deprecated in Java")
             override fun readDictionary(): InputStream { TODO("Not yet implemented") }
 
+            @Deprecated("Deprecated in Java")
             override fun readDictionary(dictionaryType: DictionaryType?): InputStream { TODO("Not yet implemented") }
         }
 

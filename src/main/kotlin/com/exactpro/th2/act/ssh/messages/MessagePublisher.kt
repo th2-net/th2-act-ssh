@@ -36,7 +36,11 @@ import javax.annotation.concurrent.ThreadSafe
 class MessagePublisher(
     private val router: MessageRouter<RawMessageBatch>,
     private val defaultConfiguration: PublicationConfiguration,
+    private val bookName: String,
 ) {
+    init {
+        require(bookName.isNotBlank()) { "blank book name" }
+    }
     private class SessionInfo {
         private var sequence: Long = Instant.now().run { epochSecond * NANOS_IN_SECONDS + nano }
         fun getAndIncrement(): Long = sequence++
@@ -79,11 +83,12 @@ class MessagePublisher(
     ) = apply {
         metadataBuilder.apply {
             idBuilder.apply {
+                bookName = this@MessagePublisher.bookName
                 direction = Direction.FIRST
                 sequence = info.getAndIncrement()
                 connectionIdBuilder.sessionAlias = alias
+                timestamp = Instant.now().toTimestamp()
             }
-            timestamp = Instant.now().toTimestamp()
             putProperties(EXECUTION_ALIAS_PARAMETER, execution.alias)
             putAllProperties(parameters)
         }

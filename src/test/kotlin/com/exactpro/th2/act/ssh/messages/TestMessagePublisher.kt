@@ -42,7 +42,7 @@ class TestMessagePublisher {
 
     @Nested
     inner class WithoutDefaultConfiguration {
-        private val publisher = MessagePublisher(router, PublicationConfiguration())
+        private val publisher = MessagePublisher(router, PublicationConfiguration(), "test")
 
         @Test
         fun `publishes output when enabled`() {
@@ -52,6 +52,7 @@ class TestMessagePublisher {
             verify(router).sendAll(captor.capture(), anyVararg())
             expect {
                 that(messageID).isNotNull().apply {
+                    get { bookName }.isEqualTo("test")
                     get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
                     get { direction }.isEqualTo(Direction.FIRST)
                     get { sequence }.isGreaterThan(0)
@@ -62,13 +63,14 @@ class TestMessagePublisher {
                     .apply {
                         get { metadata }.apply {
                             get { id }.apply {
+                                get { bookName }.isEqualTo("test")
                                 get { direction }.isEqualTo(Direction.FIRST)
                                 get { sequence }.isNotEqualTo(0)
                                 get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
-                            }
-                            get { timestamp }.apply {
-                                get { seconds }.isGreaterThan(0)
-                                get { nanos }.isGreaterThan(0)
+                                get { timestamp }.apply {
+                                    get { seconds }.isGreaterThan(0)
+                                    get { nanos }.isGreaterThan(0)
+                                }
                             }
                             get { propertiesMap }.isEqualTo(mapOf(
                                 "act.ssh.execution-alias" to "test-alias",
@@ -99,7 +101,7 @@ class TestMessagePublisher {
     inner class WithDefaultConfiguration {
         private val publisher = MessagePublisher(router, PublicationConfiguration(
             enabled = true,
-        ))
+        ), "test")
 
         @Test
         fun `publishes output when enabled`() {
@@ -109,6 +111,7 @@ class TestMessagePublisher {
             verify(router).sendAll(captor.capture(), anyVararg())
             expect {
                 that(messageID).isNotNull().apply {
+                    get { bookName }.isEqualTo("test")
                     get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
                     get { direction }.isEqualTo(Direction.FIRST)
                     get { sequence }.isGreaterThan(0)
@@ -119,13 +122,14 @@ class TestMessagePublisher {
                     .apply {
                         get { metadata }.apply {
                             get { id }.apply {
+                                get { bookName }.isEqualTo("test")
                                 get { direction }.isEqualTo(Direction.FIRST)
                                 get { sequence }.isNotEqualTo(0)
                                 get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
-                            }
-                            get { timestamp }.apply {
-                                get { seconds }.isGreaterThan(0)
-                                get { nanos }.isGreaterThan(0)
+                                get { timestamp }.apply {
+                                    get { seconds }.isGreaterThan(0)
+                                    get { nanos }.isGreaterThan(0)
+                                }
                             }
                             get { propertiesMap }.isEqualTo(mapOf(
                                 "act.ssh.execution-alias" to "test-alias",
@@ -158,10 +162,10 @@ class TestMessagePublisher {
                                 get { direction }.isEqualTo(Direction.FIRST)
                                 get { sequence }.isNotEqualTo(0)
                                 get { connectionId }.get { sessionAlias }.isEqualTo("test-msg-alias")
-                            }
-                            get { timestamp }.apply {
-                                get { seconds }.isGreaterThan(0)
-                                get { nanos }.isGreaterThan(0)
+                                get { timestamp }.apply {
+                                    get { seconds }.isGreaterThan(0)
+                                    get { nanos }.isGreaterThan(0)
+                                }
                             }
                             get { propertiesMap }.isEqualTo(mapOf(
                                 "act.ssh.execution-alias" to "test-alias",

@@ -44,7 +44,7 @@ class TestSshServiceManual {
             CommandExecution("false", "echo \${$parameterName} && sleep \${$parameterName}", emptyMap(), true, 2_000, false),
             CommandExecution("true", "echo \${$parameterName} && sleep \${$parameterName}", emptyMap(), true, 2_000, true)
         ),
-        MessagePublisher(mock { }, PublicationConfiguration(enabled = false))
+        MessagePublisher(mock { }, PublicationConfiguration(enabled = false), "test")
     )
 
     @Test
